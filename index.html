@@ -1,0 +1,60 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Weather website</title>
+    <style>
+    #map{
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: -1
+    }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/vue"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      var socket = io()
+
+      socket.on('ping', console.log)
+    </script>
+  </head>
+  <body>
+    <div id="example">
+      <span v-for="(loc, index) in locations">
+        <button v-on:click="selected = index">{{ loc.name }}</button>
+      </span>
+      <vue-map id="map" :locations="locations" :coordinates="coordinates"></vue-map>
+    </div>
+  </body>
+
+<!--MAP COMPONENT DEPENDENCIES-->
+<script src="/js/d3.v3.min.js"></script>
+<script src="/js/topojson.v1.min.js"></script>
+<script src="/js/world-110m.js"></script>
+<!--MAP COMPONENT AS <vue-map> component-->
+<script src="/js/vue-map-component.js"></script>
+
+<!-- START OF MAIN VUE SCRIPT -->
+<script>
+  new Vue({
+    el: '#example',
+    data: {
+      selected: 0,
+      locations: [
+        { name: 'Tokyo', lat: 35.6584421, lng: 139.7328635 },
+        { name: 'Helsinki', lat: 60.1697530, lng: 24.9490830 },
+        { name: 'New York', lat: 40.7406905, lng: -73.9938438 },
+        { name: 'Amsterdam', lat: 52.3650691, lng: 4.9040238 },
+        { name: 'Dubai', lat: 25.092535, lng: 55.1562243 },
+      ]
+    },
+    computed: {
+      coordinates: function() {
+        const city = this.locations[this.selected]
+        return [city.lat, city.lng]
+      }
+    }
+  })
+</script>
+
+</html>
