@@ -1,14 +1,47 @@
+/** A canvas map vue component
+  *
+  * locations prop is an array of location objects with
+  * coordinates and latest temperature
+  *
+  * Selected prop is the index which location is selected
+  *
+  * Ping prop changes to index of a location that had a measurement
+  *
+  * Global variable dependencies:
+  *   Vue       /-- For the component declaration
+  *   d3        /-- For sphere projections/paths and other functions
+  *   world     /-- A json object with world-110m data
+  *   topojson  /-- For parsing the world data
+  *   
+  * Uses modern javascript features. Use babel transpilation
+  * to support older browsers.
+  *
+*/
+
+// calculate naive distance between two coordinates
+const pythagoras = (x, y) => {
+  return Math.sqrt(Math.pow(x[0]-y[0], 2) + Math.pow(x[1]-y[1], 2))
+}
+
+// register vue component
 Vue.component('vue-map', {
   template: '<canvas ref="canvas"></canvas>',
-  props: ['locations', 'coordinates'],
+  props: ['locations', 'selected'],
   watch: {
-    coordinates: function(args) {
-      console.log("coordinates changed", args)
-      this.rotate(args)
+    selected: function() {
+      
+      const oldCoordinates = this.coordinates
+
+      this.coordinates = this.locations[this.selected].coordinates
+
+      // when selected location changes, rotate the projection
+      this.rotate(this.coordinates, oldCoordinates)
     }
   },
   created: function() {
-    console.log("CREATING, PROPS ARE", this.locations, this.coordinates)
+
+    // initialize the first coordinates
+    this.coordinates = this.locations[this.selected].coordinates
 
     // initialize worldmap meshes
     this.land =
@@ -18,60 +51,40 @@ Vue.component('vue-map', {
     this.borders =
       topojson.mesh(world, world.objects.countries, (a, b) => a !== b)
 
+    const locationIndexes =
+      this.locations.map(l => l.topoindex)
+
     // assign a varied color to each countries index
     this.colors = this.countries.map((_, i) => {
+
+      if (locationIndexes.indexOf(i) !== -1) {
+        return '#ABB'
+      }
+
       let hex = (i % 4 * 3).toString(16)
-      return'#C'+hex+'D'+hex+'D'+hex
+      return '#C'+hex+'D'+hex+'D'+hex
     })
 
-    const distance = (x, y) => {
-      // calculate naive distance between two coordinates
-      return Math.sqrt(Math.pow(x.lat-y.lat, 2) + Math.pow(x.lng-y.lng, 2))
-    }
-
-    // create a network of lines from each location to one another
-    this.networks = this.locations.reduce((lines, location, index) => {
-      const otherlocations = this.locations.slice(index + 1)
-      if (otherlocations.length !== 0) {
-
-        const othersbydistance =
-          otherlocations
-            .sort((a, b) => distance(a, location) > distance(b, location))
-
-        const newline = {
-          type: 'LineString',
-          coordinates: [
-            [location.lng, location.lat],
-            [othersbydistance[0].lng, othersbydistance[0].lat]
-          ]
-        }
-        lines.push(newline)
-      }
-      return lines
-    }, [])
-
-    console.log("INITIALIZED MESHES", this.land)
   },
   mounted: function() {
-
     // add resize listener to rescale canvas on window size change
     window.addEventListener('resize', this.init)
 
     // initialize the canvas
     this.init(true)
 
-    // center map around current location if provided
+    // center map around current location if possible
+    /*
     if (navigator && navigator.geolocation) {
       navigator.geolocation.getCurrentPosition((position) => {
         const { latitude, longitude } = position.coords
         console.log("Location found, centering map", latitude, longitude)
         this.rotate([latitude, longitude])
-      }, console.error)
-    }
+      }, console.error) 
+    }*/
   },
   methods: {
     init: function(first) {
-      console.log("INITIALIZING CANVAS AND FUNCTIONS")
       this.canvas = this.$refs.canvas
       this.height = window.innerHeight
       this.width = window.innerWidth
@@ -81,7 +94,7 @@ Vue.component('vue-map', {
 
       this.projection =
         d3.geo.orthographic()
-        .scale(this.height / 1.1)
+        .scale(500)
         .translate([this.width / 2, this.height / 2])
         .precision(0.6)
 
@@ -93,39 +106,41 @@ Vue.component('vue-map', {
       this.backGrid = d3.geo.graticule()
       this.frontGrid = d3.geo.graticule()
 
-      // if this is the first init rotate globe to first location
-      // else redraw
-      if (first) {
-        this.rotate(this.coordinates)
-      }else{
-        this.draw()
-      }
+      this.rotate(this.coordinates)
     },
-    rotate: function(coordinates) {
+    rotate: function(coordinates, oldCoordinates) {
+      // create clojures of draw and projection functions
+      // to avoid complex binding
       const draw = this.draw
       const projection = this.projection
+
       d3.transition()
       .duration(850)
       .tween('rotate', function() {
-        // interpolate the path of rotation
+        // interpolate the path of the rotation
         const rotation =
           d3.interpolate(
             projection.rotate(),
-            coordinates.map(coordinate => -coordinate).reverse()
+            coordinates.map(coordinate => -coordinate)
           )
 
-        // runs every frame of the animation
-        return function(t) {
+        // distance of rotation
+        let distance = 50
+        if (oldCoordinates) {
+          distance = pythagoras(coordinates, oldCoordinates)
+        }
+
+        return (t) => {
           // apply interpolated rotation at time t
           projection.rotate(rotation(t))
 
           // redraw rotated globe
-          draw()
+          draw(t, distance)
         }
       })
       .transition()
     },
-    draw: function() {
+    draw: function(time, distance) {
       const c = this.context
       const projection = this.projection
       const path = this.path
@@ -169,14 +184,33 @@ Vue.component('vue-map', {
       c.strokeStyle =
         "rgba(0, 0, 0, 0.1)", c.lineWidth = .5, c.beginPath(), path(this.frontGrid), c.stroke()
 
-      for (let i in this.networks) {
-        c.strokeStyle =
-          "rgba(150,50,50,0.5)",
-          c.lineWidth = 3,
-          c.beginPath(),
-          path(this.networks[i]),
-          c.stroke()
+      // create a red circle on each location
+      const circle =
+        d3.geo.circle()
+
+      let circles = []
+      for (let i in this.locations) {
+        let angle =  0.5
+
+        // the target location will have a big decreasing angle over time
+        if (i == this.selected) {
+          // results in 0.5 at the end of the animation
+          angle = 0.5 + ( ( 1-(time || 1) ) * Math.pow(distance / 10, 1.4) )
+        }
+
+        circles.push(
+          circle
+          .angle(angle)
+          .origin(
+            this.locations[i].coordinates
+          )()
+        )
       }
+      c.fillStyle = 'rgba(250,100,100,0.8)'
+      c.beginPath()
+      path({type: "GeometryCollection", geometries: circles})
+      c.fill()
+
     }
   }
 })

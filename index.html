@@ -12,18 +12,14 @@
     </style>
     <script src="https://cdn.jsdelivr.net/npm/vue"></script>
     <script src="/socket.io/socket.io.js"></script>
-    <script>
-      var socket = io()
-
-      socket.on('ping', console.log)
-    </script>
   </head>
   <body>
     <div id="example">
       <span v-for="(loc, index) in locations">
         <button v-on:click="selected = index">{{ loc.name }}</button>
+        <span>{{ loc.latestTemperature }}</span>
       </span>
-      <vue-map id="map" :locations="locations" :coordinates="coordinates"></vue-map>
+      <vue-map id="map" :ping="ping" :locations="locations" :selected="selected"></vue-map>
     </div>
   </body>
 
@@ -36,22 +32,31 @@
 
 <!-- START OF MAIN VUE SCRIPT -->
 <script>
+
   new Vue({
     el: '#example',
     data: {
+      ping: 0,
       selected: 0,
       locations: [
-        { name: 'Tokyo', lat: 35.6584421, lng: 139.7328635 },
-        { name: 'Helsinki', lat: 60.1697530, lng: 24.9490830 },
-        { name: 'New York', lat: 40.7406905, lng: -73.9938438 },
-        { name: 'Amsterdam', lat: 52.3650691, lng: 4.9040238 },
-        { name: 'Dubai', lat: 25.092535, lng: 55.1562243 },
+        { id: 0, latestTemperature: 20, name: 'Tokyo', coordinates: [139.7328635, 35.6584421], topoindex: 82 },
+        { id: 1, latestTemperature: 15, name: 'Helsinki', coordinates: [24.9490830, 60.1697530], topoindex: 52 },
+        { id: 2, latestTemperature: 22, name: 'New York', coordinates: [-73.9938438, 40.7406905], topoindex: 168 },
+        { id: 3, latestTemperature: 2, name: 'Amsterdam', coordinates: [4.9040238, 52.3650691], topoindex: 117 },
+        { id: 4, latestTemperature: 40, name: 'Dubai', coordinates: [55.1562243, 25.092535], topoindex: 3 },
       ]
     },
-    computed: {
-      coordinates: function() {
-        const city = this.locations[this.selected]
-        return [city.lat, city.lng]
+    created: function() {
+      this.socket = io()
+      this.socket.on('measurement', this.addMeasurement)
+    },
+    methods: {
+      addMeasurement: function(measurement) {
+        console.log("received measurement", measurement)
+        this.locations[measurement.id].latestTemperature =
+          measurement.celcius
+
+        this.ping = measurement.id
       }
     }
   })

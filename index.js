@@ -14,7 +14,12 @@ io.on('connection', function(socket){
 })
 
 const ping = setInterval(() => {
-	io.emit('ping', new Date())
+	const m = {
+		id: Math.floor(Math.random() * 5),
+		celcius: Math.floor(Math.random() * 20 + 10)
+	}
+	console.log(m)
+	io.emit('measurement', m)
 }, 10000)
 
 
