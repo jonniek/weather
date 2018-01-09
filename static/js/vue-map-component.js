@@ -109,18 +109,17 @@ Vue.component('vue-map', {
       this.rotate(this.coordinates)
     },
     rotate: function(coordinates, oldCoordinates) {
-      // create clojures of draw and projection functions
-      // to avoid complex binding
-      const draw = this.draw
-      const projection = this.projection
 
-      d3.transition()
+      // animation has started
+      this.$emit('started')
+
+      const t = d3.transition()
       .duration(850)
       .tween('rotate', function() {
         // interpolate the path of the rotation
         const rotation =
           d3.interpolate(
-            projection.rotate(),
+            this.projection.rotate(),
             coordinates.map(coordinate => -coordinate)
           )
 
@@ -130,15 +129,21 @@ Vue.component('vue-map', {
           distance = pythagoras(coordinates, oldCoordinates)
         }
 
-        return (t) => {
+        return function(t) {
           // apply interpolated rotation at time t
-          projection.rotate(rotation(t))
+          this.projection.rotate(rotation(t))
 
           // redraw rotated globe
-          draw(t, distance)
-        }
-      })
+          this.draw(t, distance)
+
+          // animation has ended
+          if (t == 1) {
+            this.$emit('finished')
+          }
+        }.bind(this)
+      }.bind(this))
       .transition()
+      
     },
     draw: function(time, distance) {
       const c = this.context

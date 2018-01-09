@@ -1,27 +1,167 @@
 <!doctype html>
 <html>
-  <head>
-    <title>Weather website</title>
-    <style>
-    #map{
-      position: absolute;
-      top: 0;
-      left: 0;
-      z-index: -1
-    }
-    </style>
-    <script src="https://cdn.jsdelivr.net/npm/vue"></script>
-    <script src="/socket.io/socket.io.js"></script>
-  </head>
-  <body>
-    <div id="example">
-      <span v-for="(loc, index) in locations">
-        <button v-on:click="selected = index">{{ loc.name }}</button>
-        <span>{{ loc.latestTemperature }}</span>
-      </span>
-      <vue-map id="map" :ping="ping" :locations="locations" :selected="selected"></vue-map>
+<head>
+  <title>Weather website</title>
+  <style>
+  * {
+    box-sizing: border-box;
+  }
+  [v-cloak]{display: none}
+  html, body {
+    font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen-Sans,Ubuntu,Cantarell,"Helvetica Neue",sans-serif;
+    font-size: 17px;
+    word-spacing: 1px;
+    color:#333;
+    padding: 0;
+    margin: 0;
+  }
+
+  #app{
+    position: relative;
+    height: 100vh;
+    width: 100vw;
+  }
+  .citybutton {
+    cursor: pointer;
+    display: inline-flex;
+    flex-direction: column;
+    background-color: white;
+    position: relative;
+    margin: 10px;
+    padding: 10px;
+    transition: all 0.2s cubic-bezier(.25,.8,.25,1);
+    height: 100px;
+    min-width: 50px;
+    box-shadow:
+      0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24),
+
+      /* Bottom width 4px, right width 3px, top and left 2px */
+      3px 4px #bcc, /* BOTTOM RIGHT */
+      -2px 4px #bcc, /* BOTTOM LEFT */
+      -2px -2px #bcc, /* TOP LEFT */
+      3px -2px #bcc; /* TOP RIGHT */
+
+    top: 0px;
+    left: 0px;
+    opacity: 1;
+  }
+
+  .citybutton:hover, .citybutton.selected {
+    box-shadow:
+      0 8px 15px rgba(0,0,0,0.2), 0 5px 5px rgba(0,0,0,0.2),
+
+      /* Bottom width 4px, right width 3px, top and left 2px */
+      3px 4px #bcc, /* BOTTOM RIGHT */
+      -2px 4px #bcc, /* BOTTOM LEFT */
+      -2px -2px #bcc, /* TOP LEFT */
+      3px -2px #bcc; /* TOP RIGHT */
+  }
+  .citybutton.selected{ cursor: default; opacity: 0.7}
+
+  .citybutton:active {
+    box-shadow:
+      0 8px 15px rgba(0,0,0,0.2), 0 5px 5px rgba(0,0,0,0.2),
+
+      /* Bottom width 2px, right width 2px, top and left 2px */
+      2px 2px #bcc, /* BOTTOM RIGHT */
+      -2px 2px #bcc, /* BOTTOM LEFT */
+      -2px -2px #bcc, /* TOP LEFT */
+      2px -2px #bcc; /* TOP RIGHT */
+    top:2px;
+    left: 1px;
+  }
+  .cityicon {
+    width: 50px;
+    height: auto;
+    display: block;
+    margin: auto;
+    padding: 5px;
+  }
+  #arrow-container {
+    position: absolute;
+    text-align: center;
+    z-index: 1;
+    top: calc(50% + 10px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: white;
+    border: 2px solid #888;
+    padding: 7px 10px;
+    transition: all .2s cubic-bezier(0.42, 0, 0.58, 1);
+    opacity: 1;
+  }
+
+  #arrow-container.down{
+    opacity: 0;
+    top:calc(50% + 100px);
+  }
+  #arrow-container.down *{
+    color:transparent;
+  }
+  #arrow-container h2{
+    margin:5px 0;
+    font-size: 21px;
+  }
+  #arrow-container .temperature{
+    font-size: 19px;
+  }
+
+  #arrow-container:before{
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    border-bottom: 10px solid #888;
+    top: -10px;
+    content: '';
+    left: 50%;
+    margin-left: -10px;
+    position: absolute;
+  }
+  #map{
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: -1
+  }
+  .topmenu {
+    text-align: center;
+  }
+
+
+  .slidedown-enter-active, .slidedown-leave-active {
+    transform: translateY(0%);
+    opacity: 1;
+    transition: all .3s cubic-bezier(0.42, 0, 0.58, 1);
+  }
+  .slidedown-enter, .slidedown-leave-to{
+    transform: translateY(-100%);
+    opacity: 0;
+    transition: all .3s cubic-bezier(0.42, 0, 0.58, 1);
+  }
+
+  </style>
+  <script src="/js/vue.min.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+  <div id="app">
+
+    <transition name="slidedown">
+      <div class="topmenu" v-cloak>
+        <div :class="{ citybutton: true, selected: index == selected }" v-on:click="selected = index" v-for="(loc, index) in locations">
+          <img class="cityicon" :src="loc.slug + '.png'" alt="">
+          <div class="cityname">{{ loc.name }}</div>
+        </div>
+      </div>
+    </transition>
+
+    <div id="arrow-container" :class="{ down: animating }" v-cloak>
+      <h2>{{ locations[selected].name }}</h2>
+      <span class="temperature">{{ locations[selected].latestTemperature }}°C</span>
     </div>
-  </body>
+
+    <vue-map id="map" v-on:started="animating = true" v-on:finished="animating = false" :locations="locations" :selected="selected"></vue-map>
+  </div>
+</body>
 
 <!--MAP COMPONENT DEPENDENCIES-->
 <script src="/js/d3.v3.min.js"></script>
@@ -34,17 +174,22 @@
 <script>
 
   new Vue({
-    el: '#example',
+    el: '#app',
     data: {
-      ping: 0,
+      animating: true,
       selected: 0,
       locations: [
-        { id: 0, latestTemperature: 20, name: 'Tokyo', coordinates: [139.7328635, 35.6584421], topoindex: 82 },
-        { id: 1, latestTemperature: 15, name: 'Helsinki', coordinates: [24.9490830, 60.1697530], topoindex: 52 },
-        { id: 2, latestTemperature: 22, name: 'New York', coordinates: [-73.9938438, 40.7406905], topoindex: 168 },
-        { id: 3, latestTemperature: 2, name: 'Amsterdam', coordinates: [4.9040238, 52.3650691], topoindex: 117 },
-        { id: 4, latestTemperature: 40, name: 'Dubai', coordinates: [55.1562243, 25.092535], topoindex: 3 },
+        { id: 0, latestTemperature: 20, name: 'Tokyo', slug: 'tokyo', coordinates: [139.7328635, 35.6584421], topoindex: 82 },
+        { id: 1, latestTemperature: 15, name: 'Helsinki', slug: 'helsinki', coordinates: [24.9490830, 60.1697530], topoindex: 52 },
+        { id: 2, latestTemperature: 22, name: 'New York', slug: 'newyork', coordinates: [-73.9938438, 40.7406905], topoindex: 168 },
+        { id: 3, latestTemperature: 2, name: 'Amsterdam', slug: 'amsterdam', coordinates: [4.9040238, 52.3650691], topoindex: 117 },
+        { id: 4, latestTemperature: 40, name: 'Dubai', slug: 'dubai', coordinates: [55.1562243, 25.092535], topoindex: 3 },
       ]
+    },
+    watch: {
+      animating: function(value) {
+        console.log("animation changed", value)
+      }
     },
     created: function() {
       this.socket = io()
