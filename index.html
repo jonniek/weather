@@ -1,6 +1,9 @@
 <!doctype html>
 <html>
 <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
   <title>Weather website</title>
   <style>
   * {
@@ -9,7 +12,7 @@
   [v-cloak]{display: none}
   html, body {
     font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen-Sans,Ubuntu,Cantarell,"Helvetica Neue",sans-serif;
-    font-size: 17px;
+    font-size: 15px;
     word-spacing: 1px;
     color:#333;
     padding: 0;
@@ -20,8 +23,12 @@
     position: relative;
     height: 100vh;
     width: 100vw;
+    display: flex;
+    flex-direction: column;
   }
   .citybutton {
+    user-select: none;
+    -moz-user-select: none;
     cursor: pointer;
     display: inline-flex;
     flex-direction: column;
@@ -30,41 +37,22 @@
     margin: 10px;
     padding: 10px;
     transition: top 0.2s cubic-bezier(.25,.8,.25,1);
-    height: 100px;
     min-width: 50px;
-    box-shadow:
-      0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24),
-
-      /* Bottom width 4px, right width 3px, top and left 2px */
-      3px 4px #bcc, /* BOTTOM RIGHT */
-      -2px 4px #bcc, /* BOTTOM LEFT */
-      -2px -2px #bcc, /* TOP LEFT */
-      3px -2px #bcc; /* TOP RIGHT */
-
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+    border: 2px solid #bcc;
     top: 0px;
-    left: 0px;
-    opacity: 1;
   }
 
   .citybutton:hover, .citybutton.selected {
     box-shadow:
-      0 8px 15px rgba(0,0,0,0.2), 0 5px 5px rgba(0,0,0,0.2),
-
-      /* Bottom width 4px, right width 3px, top and left 2px */
-      3px 4px #bcc, /* BOTTOM RIGHT */
-      -2px 4px #bcc, /* BOTTOM LEFT */
-      -2px -2px #bcc, /* TOP LEFT */
-      3px -2px #bcc; /* TOP RIGHT */
+      0 8px 15px rgba(0,0,0,0.2), 0 5px 5px rgba(0,0,0,0.2);
   }
   .citybutton.selected{
     cursor: default;
-    opacity: 1;
     top: 15px;
   }
   .citybutton > *{
     pointer-events: none;
-    user-select: none;
-    -moz-user-select: none;
   }
   .cityicon {
     width: 50px;
@@ -81,7 +69,7 @@
     left: 50%;
     transform: translateX(-50%);
     background: white;
-    border: 2px solid #888;
+    border: 2px solid #778888;
     padding: 7px 10px;
     transition: all .2s ease-in;
     opacity: 1;
@@ -96,7 +84,7 @@
     color:transparent;
   }
   #arrow-container h2{
-    margin:5px 0;
+    margin:0 0 5px 0;
     font-size: 21px;
   }
   #arrow-container .temperature{
@@ -106,7 +94,7 @@
   #arrow-container:before{
     border-left: 10px solid transparent;
     border-right: 10px solid transparent;
-    border-bottom: 10px solid #888;
+    border-bottom: 10px solid #778888;
     top: -10px;
     content: '';
     left: 50%;
@@ -122,6 +110,25 @@
   .topmenu {
     text-align: center;
   }
+  .switch {
+    font-size: 50%;
+    padding-left: 5px;
+    opacity: 0.5;
+    cursor: pointer;
+  }
+  .switch:hover {
+    opacity: 1;
+  }
+
+  .infocontainer {
+    background-color:white;
+    border: 2px solid #bcc;
+    width: 80%;
+    height: 200px;
+    align-self: center;
+    margin-top: auto;
+    margin-bottom: 20px;
+  }
 
 
   .slidedown-enter-active, .slidedown-leave-active {
@@ -135,6 +142,50 @@
     transition: all .3s cubic-bezier(0.42, 0, 0.58, 1);
   }
 
+  .slideup-enter-active, .slideup-leave-active {
+    transform: translateY(0%);
+    opacity: 1;
+    transition: all .3s cubic-bezier(0.42, 0, 0.58, 1);
+  }
+  .slideup-enter, .slideup-leave-to{
+    transform: translateY(100%);
+    opacity: 0;
+    transition: all .3s cubic-bezier(0.42, 0, 0.58, 1);
+  }
+
+  @media(max-width: 800px) {
+
+    .topmenu {
+      display: flex;
+    }
+    .citybutton {
+      width: 60%;
+      margin: 0px;
+      padding: 0px;
+      height: auto;
+    }
+    .cityname { display: none; }
+    .cityicon {
+      width: 100%;
+      padding: 0;
+    }
+
+    #arrow-container {
+      position: absolute;
+      text-align: center;
+      z-index: 1;
+      top: auto;
+      bottom: calc(50% + 10px);
+    }
+
+    #arrow-container:before{
+      border-top: 10px solid #778888;
+      border-bottom-color: transparent;
+      top: auto;
+      bottom: -20px;
+    }
+  }
+
   </style>
   <script src="/js/vue.min.js"></script>
   <script src="/socket.io/socket.io.js"></script>
@@ -142,7 +193,7 @@
 <body>
   <div id="app">
 
-    <transition name="slidedown">
+    <transition name="slidedown" appear>
       <div class="topmenu" v-cloak>
         <div :class="{ citybutton: true, selected: index == selected }" v-on:mouseDown="selected = index" v-for="(loc, index) in locations">
           <img class="cityicon" :src="loc.slug + '.png'" alt="">
@@ -151,10 +202,30 @@
       </div>
     </transition>
 
-    <div id="arrow-container" :class="{ down: animating }" v-cloak>
+    <div id="arrow-container" :class="{ down: animating }" v-cloak appear>
       <h2>{{ arrowname }}</h2>
-      <span class="temperature">{{ this.locations[this.selected].latestTemperature }}°C</span>
+      <span class="temperature">
+        {{ currentTemperature }}
+        <span v-on:click="celcius = !celcius">
+          <span v-if="celcius">°C<span class="switch">°F</span></span>
+          <span v-else>°F<span class="switch">°C</span></span>
+        </span>
+      </span>
     </div>
+
+    <transition name="slideup" appear>
+      <div class="infocontainer" v-show="!animating">
+        <div class="graph">
+          <h3>{{ locations[selected].name }}</h3>
+          <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit</p>
+        </div>
+        <div class="form">
+          <label>Input temperature
+          <input type="number" /></label>
+          <button>submit</button>
+        </div>
+      </div>
+    </transition>
 
     <vue-map id="map" v-on:started="animating = true" v-on:finished="animating = false" :locations="locations" :selected="selected"></vue-map>
   </div>
@@ -176,6 +247,8 @@
       arrowname: '',
       animating: true,
       selected: 0,
+      celcius: true,
+      userlocation: false,
       locations: [
         { id: 0, latestTemperature: 20, name: 'Tokyo', slug: 'tokyo', coordinates: [139.7328635, 35.6584421], topoindex: 82 },
         { id: 1, latestTemperature: 15, name: 'Helsinki', slug: 'helsinki', coordinates: [24.9490830, 60.1697530], topoindex: 52 },
@@ -197,8 +270,43 @@
     created: function() {
       this.socket = io()
       this.socket.on('measurement', this.addMeasurement)
+
+      if (navigator && navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition((position) => {
+          const { latitude, longitude } = position.coords
+          this.userlocation = [longitude, latitude]
+        }, console.error)
+      }
+    },
+    computed: {
+      currentTemperature: function() {
+        const celcius = this.locations[this.selected].latestTemperature
+        if (this.celcius) {
+          return celcius
+        } else {
+          return this.fahrenheit(celcius)
+        }
+      }
     },
     methods: {
+      closestLocation: function() {
+        if (this.userlocation) {
+          const userloc = this.userlocation
+          const locationsByDistance =
+            this.locations.sort((a, b) => { 
+              return this.distance(userloc, a.coordinates) > this.distance(userloc, b.coordinates)
+            })
+
+          return locationsByDistance[0]
+        }
+        return false
+      },
+      fahrenheit: function(celcius) {
+        return (celcius * 9 / 5) + 32
+      },
+      celcius: function(fahrenheit) {
+        return (fahrenheit - 32) * 5 / 9
+      },
       addMeasurement: function(measurement) {
         console.log("received measurement", measurement)
         this.locations[measurement.id].latestTemperature =

@@ -72,16 +72,6 @@ Vue.component('vue-map', {
 
     // initialize the canvas
     this.init(true)
-
-    // center map around current location if possible
-    /*
-    if (navigator && navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition((position) => {
-        const { latitude, longitude } = position.coords
-        console.log("Location found, centering map", latitude, longitude)
-        this.rotate([latitude, longitude])
-      }, console.error) 
-    }*/
   },
   methods: {
     init: function(first) {
