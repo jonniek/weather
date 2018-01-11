@@ -67,20 +67,56 @@ Vue.component('vue-map', {
 
   },
   mounted: function() {
-    // add resize listener to rescale canvas on window size change
-    window.addEventListener('resize', this.init)
+    // initialize the canvas and projection
+    this.init()
 
-    // initialize the canvas
-    this.init(true)
+    // add resize listener to rescale canvas on window size change
+    window.addEventListener('resize', this.resizeHandler)
+
+    const getHiddenProp = () => {
+      var prefixes = ['webkit','moz','ms','o']
+      
+      // if 'hidden' is natively supported just return it
+      if ('hidden' in document) return 'hidden'
+      
+      // otherwise loop over all the known prefixes until we find one
+      for (var i = 0; i < prefixes.length; i++){
+        if ((prefixes[i] + 'Hidden') in document) 
+          return prefixes[i] + 'Hidden'
+      }
+
+      // otherwise it's not supported
+      return null
+    }
+    // redraw canvas when tab gets back into focus
+    const visProp = getHiddenProp()
+    if (visProp) {
+      const evtname = visProp.replace(/[H|h]idden/,'') + 'visibilitychange'
+      window.addEventListener(evtname, this.draw)
+    }
   },
   methods: {
-    init: function(first) {
-      this.canvas = this.$refs.canvas
+    resizeHandler: function() {
+
       this.height = window.innerHeight
       this.width = window.innerWidth
       this.canvas.setAttribute("height", this.height)
       this.canvas.setAttribute("width", this.width)
+
+      this.projection
+        .translate([this.width / 2, this.height / 2])
+
+      this.draw()
+    },
+    init: function() {
+      this.canvas = this.$refs.canvas
       this.context = this.canvas.getContext('2d')
+
+      this.height = window.innerHeight
+      this.width = window.innerWidth
+      this.canvas.setAttribute("height", this.height)
+      this.canvas.setAttribute("width", this.width)
+
 
       this.projection =
         d3.geo.orthographic()
@@ -96,6 +132,7 @@ Vue.component('vue-map', {
       this.backGrid = d3.geo.graticule()
       this.frontGrid = d3.geo.graticule()
 
+      // rotate to the inital coordinates
       this.rotate(this.coordinates)
     },
     rotate: function(coordinates, oldCoordinates) {
@@ -119,12 +156,23 @@ Vue.component('vue-map', {
           distance = pythagoras(coordinates, oldCoordinates)
         }
 
+        const createScaler = (distance, initialscale) => {
+
+          const range = Math.pow(distance * 1.2, 1.1)
+
+          return (time) => (initialscale - range) + ( Math.abs(time - 0.5) * range * 2 )
+        }
+        const scaler = createScaler(distance, 500)
+
         return function(t) {
           // apply interpolated rotation at time t
           this.projection.rotate(rotation(t))
 
+          // get scale value at time t
+          const scale = scaler(t)
+
           // redraw rotated globe
-          this.draw(t, distance)
+          this.draw(t, distance, scale)
 
           // animation has ended
           if (t == 1) {
@@ -135,13 +183,20 @@ Vue.component('vue-map', {
       .transition()
       
     },
-    draw: function(time, distance) {
+    draw: function(time, distance, scale) {
       const c = this.context
       const projection = this.projection
       const path = this.path
 
+      time = time || 1
+      distance = distance || 0
+      scale = scale || 500
+
       // clear the canvas
       c.clearRect(0, 0, this.width, this.height)
+
+      // set scale of projection
+      this.projection.scale(scale)
 
       // Clip to the backside of the globe
       projection.clipAngle(180)
@@ -190,15 +245,13 @@ Vue.component('vue-map', {
         // the target location will have a big decreasing angle over time
         if (i == this.selected) {
           // results in 0.5 at the end of the animation
-          angle = 0.5 + ( ( 1-(time || 1) ) * Math.pow(distance / 10, 1.4) )
+          angle = 0.5 + ( ( 1 - time ) * Math.pow(distance / 10, 1.4) )
         }
 
         circles.push(
           circle
           .angle(angle)
-          .origin(
-            this.locations[i].coordinates
-          )()
+          .origin(this.locations[i].coordinates)()
         )
       }
       c.fillStyle = 'rgba(250,100,100,0.8)'

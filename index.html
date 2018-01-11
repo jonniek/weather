@@ -36,8 +36,8 @@
     position: relative;
     margin: 10px;
     padding: 10px;
-    transition: top 0.2s cubic-bezier(.25,.8,.25,1);
     min-width: 50px;
+    transition: top 0.2s cubic-bezier(.25,.8,.25,1);
     box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
     border: 2px solid #bcc;
     top: 0px;
@@ -121,15 +121,51 @@
   }
 
   .infocontainer {
+    z-index: 2;
     background-color:white;
     border: 2px solid #bcc;
-    width: 80%;
     height: 200px;
     align-self: center;
     margin-top: auto;
-    margin-bottom: 20px;
+    margin-bottom: 10px;
+    padding: 7px 10px;
+    text-align: center;
   }
 
+  .modalButton {
+    border: 2px solid #bcc;
+    padding: 7px 10px;
+    text-align: center;
+    margin:10px 0;
+    display: inline-block;
+  }
+  .modalContainer {
+    z-index: 3;
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: 100vw;
+    background: rgba(0,0,0,0.5);
+  }
+  .block { display: block }
+  .modal {
+    background: white;
+    border: 2px solid #bcc;
+    padding: 27px 35px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    max-width: 400px;
+  }
+  form.modal label{
+    display: block
+  }
+  .formfield {padding: 5px 0;}
+  .warning {
+    color: orange;
+  }
 
   .slidedown-enter-active, .slidedown-leave-active {
     transform: translateY(0%);
@@ -184,14 +220,43 @@
       top: auto;
       bottom: -20px;
     }
+
+    .infocontainer {
+      width: calc(100% - 20px);
+    }
   }
 
   </style>
-  <script src="/js/vue.min.js"></script>
+  <script src="/js/vue.js"></script>
   <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
   <div id="app">
+
+    <div v-on:click.self="showModal = false" class="modalContainer" v-if="showModal" v-cloak>
+      <form v-on:submit.prevent="sendMeasurement" class="modal">
+        <h3>Add temperature measurement</h3>
+
+        <div class="formfield">
+          <label>Location:
+            <select class="block" v-model="formLocation">
+              <option v-for="loc in locations" v-bind:value="loc.id">
+                {{ loc.name }}
+              </option>
+            </select>
+          </label>
+          <span class="warning" v-if="locationCheck !== -1">
+            Your closest location is {{ locations[locationCheck].name }}. Are you sure you want to submit to {{ locations[formLocation].name }}?
+          </span>
+        </div>
+
+        <div class="formfield">
+          <label>Temperature:
+          <input class="block" autofocus v-model.number="formMeasurement" type="number" /></label>
+          <button class="modalbutton" v-on:click="sendMeasurement">Submit</button>
+        </div>
+      </form>
+    </div>
 
     <transition name="slidedown" appear>
       <div class="topmenu" v-cloak>
@@ -202,28 +267,23 @@
       </div>
     </transition>
 
-    <div id="arrow-container" :class="{ down: animating }" v-cloak appear>
+    <div id="arrow-container" :class="{ down: animating }" v-cloak>
       <h2>{{ arrowname }}</h2>
       <span class="temperature">
-        {{ currentTemperature }}
-        <span v-on:click="celcius = !celcius">
-          <span v-if="celcius">°C<span class="switch">°F</span></span>
+        {{ currentTemperature | round }}
+        <span v-on:click="useCelcius = !useCelcius">
+          <span v-if="useCelcius">°C<span class="switch">°F</span></span>
           <span v-else>°F<span class="switch">°C</span></span>
         </span>
       </span>
     </div>
 
     <transition name="slideup" appear>
-      <div class="infocontainer" v-show="!animating">
+      <div class="infocontainer" v-show="!animating" v-cloak>
         <div class="graph">
-          <h3>{{ locations[selected].name }}</h3>
           <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit</p>
         </div>
-        <div class="form">
-          <label>Input temperature
-          <input type="number" /></label>
-          <button>submit</button>
-        </div>
+          <div class="modalButton" v-on:click="showModal = true">Submit measurement!</div>
       </div>
     </transition>
 
@@ -246,9 +306,12 @@
     data: {
       arrowname: '',
       animating: true,
+      showModal: false,
       selected: 0,
-      celcius: true,
+      useCelcius: true,
       userlocation: false,
+      formMeasurement: 0,
+      formLocation: 0,
       locations: [
         { id: 0, latestTemperature: 20, name: 'Tokyo', slug: 'tokyo', coordinates: [139.7328635, 35.6584421], topoindex: 82 },
         { id: 1, latestTemperature: 15, name: 'Helsinki', slug: 'helsinki', coordinates: [24.9490830, 60.1697530], topoindex: 52 },
@@ -265,49 +328,88 @@
           // Complexity in favor of beuatiful animations, hurray!
           this.arrowname = this.locations[this.selected].name
         }
+      },
+      form: function(value) {
+        console.log("form changed", value, value.measurement, value.location)
+      },
+      locationWarning: function(val) {
+        console.log("locationWarn", val)
       }
     },
     created: function() {
       this.socket = io()
-      this.socket.on('measurement', this.addMeasurement)
+      this.socket.on('update', this.receiveMeasurement)
 
       if (navigator && navigator.geolocation) {
         navigator.geolocation.getCurrentPosition((position) => {
           const { latitude, longitude } = position.coords
           this.userlocation = [longitude, latitude]
-        }, console.error)
+        })
       }
     },
     computed: {
       currentTemperature: function() {
         const celcius = this.locations[this.selected].latestTemperature
-        if (this.celcius) {
+        if (this.useCelcius) {
           return celcius
         } else {
-          return this.fahrenheit(celcius)
+          return this.celciusToFahrenheit(celcius)
         }
+      },
+      locationCheck: function() {
+        // returns id of your closest location if it is
+        // in conclict with the selected location in the form
+        const distance = (x, y) => {
+          return Math.sqrt(Math.pow(x[0]-y[0], 2) + Math.pow(x[1]-y[1], 2))
+        }
+
+        const getClosestLocation = () => {
+          // return id of closest location, on failure return -1
+          const userloc = this.userlocation
+          if (!userloc) return -1
+          const locationsByDistance =
+            this.locations.slice().sort((a, b) => { 
+              return (
+                distance(userloc, a.coordinates)
+              > distance(userloc, b.coordinates)
+              )
+            })
+          return locationsByDistance[0].id
+        }
+
+
+        const closest = getClosestLocation()
+        if (closest !== -1 && closest !== this.formLocation) {
+          return closest
+        }
+        return -1
+      },
+      temperatureCheck: function() {
+
+      }
+    },
+    filters: {
+      round: function(value) {
+        return Math.round(value)
       }
     },
     methods: {
-      closestLocation: function() {
-        if (this.userlocation) {
-          const userloc = this.userlocation
-          const locationsByDistance =
-            this.locations.sort((a, b) => { 
-              return this.distance(userloc, a.coordinates) > this.distance(userloc, b.coordinates)
-            })
-
-          return locationsByDistance[0]
-        }
-        return false
+      sendMeasurement: function() {
+        // Since we already have a socket open let's use that
+        // instead of a post request
+        const input = this.formMeasurement
+        this.socket.emit('add', {
+          id: this.selected,
+          celcius: this.useCelcius ? input : this.fahrenheitToCelcius(input)
+        }, () => this.showModal = false)
       },
-      fahrenheit: function(celcius) {
+      celciusToFahrenheit: function(celcius) {
         return (celcius * 9 / 5) + 32
       },
-      celcius: function(fahrenheit) {
+      fahrenheitToCelcius: function(fahrenheit) {
         return (fahrenheit - 32) * 5 / 9
       },
-      addMeasurement: function(measurement) {
+      receiveMeasurement: function(measurement) {
         console.log("received measurement", measurement)
         this.locations[measurement.id].latestTemperature =
           measurement.celcius

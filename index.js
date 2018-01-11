@@ -9,20 +9,18 @@ app.get('/', (req, res) => {
 	res.sendFile(__dirname + '/index.html')
 })
 
-io.on('connection', function(socket){
-  console.log('a user connected');
-})
+io.on('connection', (socket) => {
+  socket.on('add', (measurement, callback) => {
+    console.log('measurement: ', measurement)
 
-const ping = setInterval(() => {
-	const m = {
-		id: Math.floor(Math.random() * 5),
-		celcius: Math.floor(Math.random() * 20 + 10)
-	}
-	console.log(m)
-	io.emit('measurement', m)
-}, 10000)
+    io.emit('update', measurement)
+
+    callback({ status: 'ok' })
+  })
+})
 
 
 http.listen(3000, () => {
   console.log('listening on *:3000')
 })
+
