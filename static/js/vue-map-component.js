@@ -29,12 +29,12 @@ Vue.component('vue-map', {
   props: ['locations', 'selected'],
   watch: {
     selected: function() {
-      
+      // when selected prop changes change the coordinates
+      // and rotate the projection
       const oldCoordinates = this.coordinates
-
       this.coordinates = this.locations[this.selected].coordinates
-
-      // when selected location changes, rotate the projection
+      
+      // pass old coordinates to rotate to calcuate distance
       this.rotate(this.coordinates, oldCoordinates)
     }
   },
@@ -57,6 +57,7 @@ Vue.component('vue-map', {
     // assign a varied color to each countries index
     this.colors = this.countries.map((_, i) => {
 
+      // for countries in our location list use a stronger color
       if (locationIndexes.indexOf(i) !== -1) {
         return '#ABB'
       }
@@ -95,44 +96,59 @@ Vue.component('vue-map', {
       window.addEventListener(evtname, this.draw)
     }
   },
+  computed: {
+    scale: function() {
+      // the scale of the projection
+      const scale = this.width / 3
+      return scale < 400 ? 400 : scale
+    }
+  },
   methods: {
-    resizeHandler: function() {
-
+    resetCanvas: function() {
+      // reset the canvas size and store window size in vue variables
       this.height = window.innerHeight
       this.width = window.innerWidth
       this.canvas.setAttribute("height", this.height)
       this.canvas.setAttribute("width", this.width)
+    },
+    resizeHandler: function() {
+      this.resetCanvas()
 
+      // reset the translation of the projection
       this.projection
         .translate([this.width / 2, this.height / 2])
+        .scale(this.scale)
 
+      // redraw the new canvas and projection
       this.draw()
     },
     init: function() {
+      // create canvas variables and projection functions
+
       this.canvas = this.$refs.canvas
       this.context = this.canvas.getContext('2d')
 
-      this.height = window.innerHeight
-      this.width = window.innerWidth
-      this.canvas.setAttribute("height", this.height)
-      this.canvas.setAttribute("width", this.width)
+      // set the size of canvas
+      this.resetCanvas()
 
-
+      // controls the projection of the globe
       this.projection =
         d3.geo.orthographic()
-        .scale(500)
+        .scale(this.scale)
         .translate([this.width / 2, this.height / 2])
         .precision(0.6)
 
+      // translates paths of the projection to the canvas
       this.path = 
         d3.geo.path()
         .projection(this.projection)
         .context(this.context)
 
+      // grids for the projection
       this.backGrid = d3.geo.graticule()
       this.frontGrid = d3.geo.graticule()
 
-      // rotate to the inital coordinates
+      // rotate projection to the inital coordinates
       this.rotate(this.coordinates)
     },
     rotate: function(coordinates, oldCoordinates) {
@@ -140,8 +156,8 @@ Vue.component('vue-map', {
       // animation has started
       this.$emit('started')
 
-      const t = d3.transition()
-      .duration(850)
+      d3.transition()
+      .duration(1300)
       .tween('rotate', function() {
         // interpolate the path of the rotation
         const rotation =
@@ -157,12 +173,12 @@ Vue.component('vue-map', {
         }
 
         const createScaler = (distance, initialscale) => {
-
-          const range = Math.pow(distance * 1.2, 1.1)
-
+          // creates a function that returns interpolated scales
+          // larger distance creates a larger range in the scale
+          const range = Math.pow(distance, 1.1)
           return (time) => (initialscale - range) + ( Math.abs(time - 0.5) * range * 2 )
-        }
-        const scaler = createScaler(distance, 500)
+        } 
+        const scaler = createScaler(distance, this.scale)
 
         return function(t) {
           // apply interpolated rotation at time t

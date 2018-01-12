@@ -44,8 +44,7 @@
   }
 
   .citybutton:hover, .citybutton.selected {
-    box-shadow:
-      0 8px 15px rgba(0,0,0,0.2), 0 5px 5px rgba(0,0,0,0.2);
+    box-shadow: 0 8px 15px rgba(0,0,0,0.2), 0 5px 5px rgba(0,0,0,0.2);
   }
   .citybutton.selected{
     cursor: default;
@@ -90,6 +89,9 @@
   #arrow-container .temperature{
     font-size: 19px;
   }
+  .temperature {
+    cursor: pointer;
+  }
 
   #arrow-container:before{
     border-left: 10px solid transparent;
@@ -132,12 +134,41 @@
     text-align: center;
   }
 
+  .flex{display: flex;}
+  .range{
+    flex-grow: 1;
+    align-self: center;
+  }
+  .increment{
+    font-size: 20px;
+    font-weight: bold;
+    padding: 10px;
+  }
   .modalButton {
-    border: 2px solid #bcc;
+    user-select: none;
+    -moz-user-select: none;
+    cursor: pointer;
     padding: 7px 10px;
     text-align: center;
     margin:10px 0;
     display: inline-block;
+    flex-grow: 1;
+    transition: all .1s ease-out;
+    position: relative;
+    top: 0;
+    box-shadow:
+      3px 3px #bcc, /* bottom right */
+      -2px -2px #bcc, /* top left */
+      3px -2px #bcc, /* top right */
+      -2px 3px #bcc /* bottom left */
+  }
+  .modalButton:active {
+    top:2px;
+    box-shadow:
+      1px 1px #bcc, /* bottom right */
+      -2px -2px #bcc, /* top left */
+      1px -2px #bcc, /* top right */
+      -2px 1px #bcc /* bottom left */
   }
   .modalContainer {
     z-index: 3;
@@ -152,15 +183,12 @@
   .modal {
     background: white;
     border: 2px solid #bcc;
-    padding: 27px 35px;
+    padding: 10px 40px;
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    max-width: 400px;
-  }
-  form.modal label{
-    display: block
+    max-width: 95%;
   }
   .formfield {padding: 5px 0;}
   .warning {
@@ -205,7 +233,6 @@
       width: 100%;
       padding: 0;
     }
-
     #arrow-container {
       position: absolute;
       text-align: center;
@@ -221,7 +248,7 @@
       bottom: -20px;
     }
 
-    .infocontainer {
+    .infocontainer, .modal {
       width: calc(100% - 20px);
     }
   }
@@ -239,7 +266,7 @@
 
         <div class="formfield">
           <label>Location:
-            <select class="block" v-model="formLocation">
+            <select v-model="formLocation">
               <option v-for="loc in locations" v-bind:value="loc.id">
                 {{ loc.name }}
               </option>
@@ -251,9 +278,19 @@
         </div>
 
         <div class="formfield">
-          <label>Temperature:
-          <input class="block" autofocus v-model.number="formMeasurement" type="number" /></label>
-          <button class="modalbutton" v-on:click="sendMeasurement">Submit</button>
+          <span class="temperature" v-on:click="useCelcius = !useCelcius">
+            Temperature: {{ formMeasurement }}
+            <span v-if="useCelcius">°C<span class="switch">°F</span></span>
+            <span v-else>°F<span class="switch">°C</span></span>
+          </span>
+          <div class="flex">
+            <span class="increment" v-on:click="formMeasurement -= 1">-</span>
+            <input class="range" v-model.number="formMeasurement" type="range" :min="minmaxTemperature[0]" :max="minmaxTemperature[1]" step="1"/>
+            <span class="increment" v-on:click="formMeasurement += 1">+</span>
+          </div>
+          <div class="flex">
+            <div class="modalButton" v-on:click="sendMeasurement">Submit</div>
+          </div>
         </div>
       </form>
     </div>
@@ -313,14 +350,22 @@
       formMeasurement: 0,
       formLocation: 0,
       locations: [
-        { id: 0, latestTemperature: 20, name: 'Tokyo', slug: 'tokyo', coordinates: [139.7328635, 35.6584421], topoindex: 82 },
-        { id: 1, latestTemperature: 15, name: 'Helsinki', slug: 'helsinki', coordinates: [24.9490830, 60.1697530], topoindex: 52 },
-        { id: 2, latestTemperature: 22, name: 'New York', slug: 'newyork', coordinates: [-73.9938438, 40.7406905], topoindex: 168 },
-        { id: 3, latestTemperature: 2, name: 'Amsterdam', slug: 'amsterdam', coordinates: [4.9040238, 52.3650691], topoindex: 117 },
-        { id: 4, latestTemperature: 40, name: 'Dubai', slug: 'dubai', coordinates: [55.1562243, 25.092535], topoindex: 3 },
+        { id: 0, measurements: [20, 21], name: 'Tokyo', slug: 'tokyo', coordinates: [139.7328635, 35.6584421], topoindex: 82 },
+        { id: 1, measurements: [20, 21], name: 'Helsinki', slug: 'helsinki', coordinates: [24.9490830, 60.1697530], topoindex: 52 },
+        { id: 2, measurements: [20, 21], name: 'New York', slug: 'newyork', coordinates: [-73.9938438, 40.7406905], topoindex: 168 },
+        { id: 3, measurements: [20, 21], name: 'Amsterdam', slug: 'amsterdam', coordinates: [4.9040238, 52.3650691], topoindex: 117 },
+        { id: 4, measurements: [20, 21], name: 'Dubai', slug: 'dubai', coordinates: [55.1562243, 25.092535], topoindex: 3 },
       ]
     },
     watch: {
+      useCelcius: function(usingCelcius) {
+        // when we change our degree type change the current measurement value
+        if (usingCelcius) {
+          this.formMeasurement = Math.round(this.fahrenheitToCelcius(this.formMeasurement))
+        } else {
+          this.formMeasurement = Math.round(this.celciusToFahrenheit(this.formMeasurement))
+        }
+      },
       animating: function(value) {
         if (value === false) {
           // Rotation animation has stopped, change the values for arrow element.
@@ -338,8 +383,10 @@
     },
     created: function() {
       this.socket = io()
+      // receive live data from the server
       this.socket.on('update', this.receiveMeasurement)
 
+      // ask user for gps location
       if (navigator && navigator.geolocation) {
         navigator.geolocation.getCurrentPosition((position) => {
           const { latitude, longitude } = position.coords
@@ -348,8 +395,18 @@
       }
     },
     computed: {
+      minmaxTemperature: function() {
+        // returns the max degrees of current setting
+        if (this.useCelcius) {
+          return [-100, 100]
+        } else {
+          return [this.celciusToFahrenheit(-100), this.celciusToFahrenheit(100)]
+        }
+      },
       currentTemperature: function() {
-        const celcius = this.locations[this.selected].latestTemperature
+        // reactive computed value of the current locations latest temperature
+        const measurements = this.locations[this.selected].measurements
+        const celcius = measurements[measurements.length - 1]
         if (this.useCelcius) {
           return celcius
         } else {
@@ -399,7 +456,7 @@
         // instead of a post request
         const input = this.formMeasurement
         this.socket.emit('add', {
-          id: this.selected,
+          id: this.formLocation,
           celcius: this.useCelcius ? input : this.fahrenheitToCelcius(input)
         }, () => this.showModal = false)
       },
@@ -411,8 +468,7 @@
       },
       receiveMeasurement: function(measurement) {
         console.log("received measurement", measurement)
-        this.locations[measurement.id].latestTemperature =
-          measurement.celcius
+        this.locations[measurement.id].measurements.push(measurement.celcius)
       }
     }
   })
