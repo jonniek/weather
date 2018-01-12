@@ -10,6 +10,12 @@ app.get('/', (req, res) => {
 })
 
 io.on('connection', (socket) => {
+	console.log('user connected')
+	
+	socket.on('disconnect', (reason) => {
+		console.log('user disconnected', reason)
+	})
+
   socket.on('add', (measurement, callback) => {
     console.log('measurement: ', measurement)
 
