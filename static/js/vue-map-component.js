@@ -18,11 +18,6 @@
   *
 */
 
-// calculate naive distance between two coordinates
-const pythagoras = (x, y) => {
-  return Math.sqrt(Math.pow(x[0]-y[0], 2) + Math.pow(x[1]-y[1], 2))
-}
-
 // register vue component
 Vue.component('vue-map', {
   template: '<canvas ref="canvas"></canvas>',
@@ -33,7 +28,7 @@ Vue.component('vue-map', {
       // and rotate the projection
       const oldCoordinates = this.coordinates
       this.coordinates = this.locations[this.selected].coordinates
-      
+
       // pass old coordinates to rotate to calcuate distance
       this.rotate(this.coordinates, oldCoordinates)
     }
@@ -41,7 +36,12 @@ Vue.component('vue-map', {
   created: function() {
 
     // initialize the first coordinates
-    this.coordinates = this.locations[this.selected].coordinates
+    const firstloc = this.locations[this.selected]
+    if (firstloc) {
+      this.coordinates = this.locations[this.selected].coordinates
+    } else {
+      this.coordinates = [0, 0] // default to simple coordinates
+    }
 
     // initialize worldmap meshes
     this.land =
@@ -165,6 +165,11 @@ Vue.component('vue-map', {
             this.projection.rotate(),
             coordinates.map(coordinate => -coordinate)
           )
+
+        // calculate naive distance between two coordinates
+        const pythagoras = (x, y) => {
+          return Math.sqrt(Math.pow(x[0]-y[0], 2) + Math.pow(x[1]-y[1], 2))
+        }
 
         // distance of rotation
         let distance = 50

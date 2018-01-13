@@ -133,7 +133,6 @@
     z-index: 2;
     background-color:white;
     border: 2px solid #bcc;
-    height: 200px;
     align-self: center;
     margin-top: auto;
     margin-bottom: 10px;
@@ -142,6 +141,10 @@
   }
 
   .flex{display: flex;}
+  .submitContainer {
+    display: flex;
+    flex-direction: column;
+  }
   .rangewrap{
     display: flex;
     margin: 10px -10px 10px -10px;
@@ -151,6 +154,8 @@
     align-self: center;
   }
   .increment{
+    user-select: none;
+    -moz-user-select: none;
     font-size: 24px;
     padding: 10px;
     cursor: pointer;
@@ -208,8 +213,8 @@
   .warning {
     color: orange;
   }
-  .brief {
-    max-width: 400px;
+  .brief{
+    max-width: 300px;
   }
   .flash {
     text-align: center;
@@ -349,28 +354,28 @@
   <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
-  <div id="app">
+  <div id="app" v-cloak v-if="!fetching">
 
     <!-- MODDAL -->
     <div v-on:click.self="showModal = false" class="modalContainer" v-if="showModal" v-cloak>
       <form v-on:submit.prevent="sendMeasurement" class="modal">
-        <p class="warning brief" v-if="locationCheck !== -1">
-          Your closest location is {{ locations[locationCheck].name }}. Are you sure you mean to submit to {{ locations[selected].name }}?
-        </p>
         <div class="formfield">
           <span class="temperature" v-on:click="useCelcius = !useCelcius">
-            {{ locations[selected].name }}: 
-            <span v-if="useCelcius">{{ formMeasurement }}°C<span class="switch">°F</span></span>
-            <span v-else>{{ formMeasurement }}°F<span class="switch">°C</span></span>
+            {{ currentLocation.name }}: 
+            <span v-if="useCelcius">{{ inputTemperature }}°C<span class="switch">°F</span></span>
+            <span v-else>{{ inputTemperature }}°F<span class="switch">°C</span></span>
           </span>
           <div class="rangewrap">
-            <span class="increment" v-on:click="formMeasurement -= 1">-</span>
-            <input class="range" v-model.number="formMeasurement" type="range" :min="minmaxTemperature[0]" :max="minmaxTemperature[1]" step="1"/>
-            <span class="increment" v-on:click="formMeasurement += 1">+</span>
+            <span class="increment" v-on:click="addTemperature(-1)">-</span>
+            <input class="range" v-model.number="inputTemperature" type="range" :min="minmaxTemperature[0]" :max="minmaxTemperature[1]" step="1"/>
+            <span class="increment" v-on:click="addTemperature(1)">+</span>
           </div>
-          <div class="flex">
-            <div :disabled="sendDisabled" class="modalButton" v-on:click="sendMeasurement">Submit</div>
-          </div>
+        </div>
+        <div class="submitContainer">
+          <p class="warning brief" v-if="locationShouldWarn">
+            Your closest location is {{ locations[closetsLocationIndex].name }}. Are you sure you mean to submit to {{ currentLocation.name }}?
+          </p>
+          <div :disabled="submitDisabled" class="modalButton" v-on:click="sendMeasurement">Submit</div>
         </div>
       </form>
     </div>
@@ -379,7 +384,7 @@
     <transition name="slidedown" appear>
       <div>
         <div class="topmenu" v-cloak>
-          <div :class="{ citybutton: true, selected: index == selected }" v-on:mouseDown="selected = index" v-for="(loc, index) in locations">
+          <div :class="{ citybutton: true, selected: loc.id == selected }" v-on:mouseDown="selected = loc.id" v-for="loc in locations">
             <img class="cityicon" :src="loc.slug + '.png'" alt="">
             <div class="cityname">{{ loc.name }}</div>
           </div>
@@ -393,9 +398,9 @@
     <!-- CENTER MAP ARROW -->
     <div id="arrow-container" :class="{ down: animating }" v-cloak>
       <h2>{{ arrowname }}</h2>
-      <span class="temperature">
+      <span class="temperature" v-on:click="useCelcius = !useCelcius">
         {{ currentTemperature | round }}
-        <span v-on:click="useCelcius = !useCelcius">
+        <span>
           <span v-if="useCelcius">°C<span class="switch">°F</span></span>
           <span v-else>°F<span class="switch">°C</span></span>
         </span>
@@ -405,8 +410,8 @@
     <!-- BOTTOM ÌNFORMATION BOX -->
     <transition name="slideup" appear>
       <div class="infocontainer" v-show="!animating" v-cloak>
-        <div class="graph">
-          <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit</p>
+        <div id="graph">
+          <vue-graph :measurements="currentMeasurements"></vue-graph>
         </div>
           <div class="modalButton" v-on:click="showModal = true">Submit measurement!</div>
       </div>
@@ -423,6 +428,8 @@
 <script src="/js/world-110m.js"></script>
 <!--MAP COMPONENT AS <vue-map> component-->
 <script src="/js/vue-map-component.js"></script>
+<!--GRAPH COMPONENT AS <vue-graph> component-->
+<script src="/js/vue-graph-component.js"></script>
 
 <!-- START OF MAIN VUE SCRIPT -->
 <script>
@@ -431,9 +438,10 @@
     el: '#app',
     data: {
       arrowname: '',
+      fetching: true,
       animating: true,
       showModal: false,
-      selected: 0,
+      selected: 0, //index of selected location
       useCelcius: true,
       userlocation: false,
       sending: false,
@@ -443,22 +451,17 @@
         className: "",
         msg: ""
       },
-      formMeasurement: 0,
-      locations: [
-        { id: 0, measurements: [20, 21], name: 'Tokyo', slug: 'tokyo', coordinates: [139.7328635, 35.6584421], topoindex: 82 },
-        { id: 1, measurements: [20, 21], name: 'Helsinki', slug: 'helsinki', coordinates: [24.9490830, 60.1697530], topoindex: 52 },
-        { id: 2, measurements: [20, 21], name: 'New York', slug: 'newyork', coordinates: [-73.9938438, 40.7406905], topoindex: 168 },
-        { id: 3, measurements: [20, 21], name: 'Amsterdam', slug: 'amsterdam', coordinates: [4.9040238, 52.3650691], topoindex: 117 },
-        { id: 4, measurements: [20, 21], name: 'Dubai', slug: 'dubai', coordinates: [55.1562243, 25.092535], topoindex: 3 },
-      ]
+      inputTemperature: 0,
+      locations: [],
+      measurements: [],
     },
     watch: {
       useCelcius: function(usingCelcius) {
-        // when we change our degree type change the current measurement value
+        // when we change our degree type change the current measurement input value
         if (usingCelcius) {
-          this.formMeasurement = Math.round(this.fahrenheitToCelcius(this.formMeasurement))
+          this.inputTemperature = Math.round(this.fahrenheitToCelcius(this.inputTemperature))
         } else {
-          this.formMeasurement = Math.round(this.celciusToFahrenheit(this.formMeasurement))
+          this.inputTemperature = Math.round(this.celciusToFahrenheit(this.inputTemperature))
         }
       },
       animating: function(value) {
@@ -466,42 +469,16 @@
           // Rotation animation has stopped, change the values for arrow element.
           // Not using reactive variables to avoid nasty resize animation bugs.
           // Complexity in favor of beuatiful animations, hurray!
-          this.arrowname = this.locations[this.selected].name
+          this.arrowname = this.currentLocation.name
         }
-      },
-      form: function(value) {
-        console.log("form changed", value, value.measurement, value.location)
-      },
-      locationWarning: function(val) {
-        console.log("locationWarn", val)
       }
     },
     created: function() {
-      this.socket = io()
-      // receive live data from the server
-      this.socket.on('update', this.receiveMeasurement)
+      // fetch inital measurement and location data
+      this.fetchAndSetData()
 
-      const genericError = (reason) => {
-        this.disconnected = true
-        console.error("Socket error", reason)
-        this.flashMessage = {
-          active: true,
-          className: "error",
-          msg: "Connection error. Try to refresh or come back later."
-        }
-      }
-
-      // when socket has problems show a generic error
-      this.socket.on('disconnect', genericError)
-      this.socket.on('connect_error', genericError)
-      this.socket.on('connect_timeout', genericError)
-
-      // when socket reconnects remove any lindering flash message
-      this.socket.on('reconnect', function() {
-        this.disconnected = false
-        console.log("socket reconnected")
-        this.resetFlash()
-      }.bind(this))
+      // initialize socket for server communication
+      this.initSocket()
 
       // ask user for gps location
       if (navigator && navigator.geolocation) {
@@ -511,8 +488,17 @@
         })
       }
     },
+    // reactive computed variables
     computed: {
-      sendDisabled: function() {
+      currentLocation: function() {
+        if (this.locations[this.selected] === void 0) {
+          // if we do not have a location return a dummy
+          return { id: 0, name: 'undefined' }
+        }
+        return this.locations[this.selected]
+      },
+      submitDisabled: function() {
+        // should the submit button be disabled
         return this.sending || this.disconnected
       },
       minmaxTemperature: function() {
@@ -523,46 +509,76 @@
           return [this.celciusToFahrenheit(-100), this.celciusToFahrenheit(100)]
         }
       },
-      currentTemperature: function() {
-        // reactive computed value of the current locations latest temperature
-        const measurements = this.locations[this.selected].measurements
-        const celcius = measurements[measurements.length - 1]
-        if (this.useCelcius) {
-          return celcius
-        } else {
-          return this.celciusToFahrenheit(celcius)
-        }
-      },
-      locationCheck: function() {
-        // returns id of your closest location if it is
-        // in conclict with the selected location in the form
-        const distance = (x, y) => {
-          return Math.sqrt(Math.pow(x[0]-y[0], 2) + Math.pow(x[1]-y[1], 2))
+      currentMeasurements: function() {
+        // the selected citys measurements
+        let currentM =
+          // deep clone
+          JSON.parse(JSON.stringify(this.measurements))
+          // show only measurements from selected id
+          .filter(row => row.locationId === this.selected)
+          .sort((a, b) => a.timestamp < b.timestamp)
+
+        // if we use fahrenheits convert first
+        if (!this.useCelcius) {
+          const convert = this.celciusToFahrenheit
+          currentM = currentM.map(m => {
+            m.temperature =
+              convert(m.temperature)
+            return m
+          })
         }
 
-        const getClosestLocation = () => {
-          // return id of closest location, on failure return -1
-          const userloc = this.userlocation
-          if (!userloc) return -1
+        return currentM
+      },
+      currentHILO: function() {
+        // current locations highest temperature value
+        if (this.currentMeasurements.length < 1) {
+          return { hi: 0, lo: 0 }
+        }
+        const byTemp =
+          this.currentMeasurements.slice()
+          .sort((a, b) => a.temperature > b.temperature)
+
+        const hi = byTemp[byTemp.length - 1].temperature
+        const lo = byTemp[0].temperature
+        return { hi, lo }
+      },
+      currentTemperature: function() {
+        // the current locations latest temperature
+        const measurements = this.currentMeasurements
+        if (measurements.length === 0) return 0
+        return measurements[0].temperature
+      },
+      locationShouldWarn: function() {
+        // if we have user location and user has selected
+        // other than their own location, we will return true
+        const closest = this.closetsLocationIndex
+        return  closest !== -1 && closest !== this.selected
+      },
+      closetsLocationIndex: function() {
+        const userloc = this.userlocation
+        const locs = this.locations.slice()
+
+        const getClosestLocation = (from, to) => {
+          const distance = (x, y) => {
+            return Math.sqrt(Math.pow(x[0]-y[0], 2) + Math.pow(x[1]-y[1], 2))
+          }
           const locationsByDistance =
-            this.locations.slice().sort((a, b) => { 
+            to.sort((a, b) => { 
               return (
-                distance(userloc, a.coordinates)
-              > distance(userloc, b.coordinates)
+                distance(from, a.coordinates)
+              > distance(from, b.coordinates)
               )
             })
           return locationsByDistance[0].id
         }
 
-
-        const closest = getClosestLocation()
-        if (closest !== -1 && closest !== this.selected) {
+        if (userloc !== false && locs.length > 0) {
+          const closest =
+            getClosestLocation(userloc, locs)
           return closest
         }
         return -1
-      },
-      temperatureCheck: function() {
-
       }
     },
     filters: {
@@ -571,18 +587,35 @@
       }
     },
     methods: {
+      addTemperature: function(value) {
+        // add values to the temperature input
+        // not allowed to go beyond the minmax range
+        const max = (a, b) => a > b ? a : b
+        const min = (a, b) => a < b ? a : b
+        const temprange = this.minmaxTemperature
+        if (value > 0) {
+          this.inputTemperature = min(temprange[1], this.inputTemperature + value)
+        } else {
+          this.inputTemperature = max(temprange[0], this.inputTemperature - 1)
+        }
+      },
       sendMeasurement: function() {
+        if (this.submitDisabled) return
         // Since we already have a socket open let's use that
         // instead of a post request
         this.sending = true
-        const input = this.formMeasurement
+        const input = this.inputTemperature
         this.socket.emit('add', {
           id: this.selected,
-          celcius: this.useCelcius ? input : this.fahrenheitToCelcius(input)
-        }, () => {
+          temperature: this.useCelcius ? input : this.fahrenheitToCelcius(input)
+        }, (res) => {
           this.showModal = false
           this.sending = false
-          this.setFlashMessage("Thank you for your contribution!")
+          if (res.success){
+            this.setFlashMessage("Thank you for your contribution!", "success")
+          } else {
+            this.setFlashMessage("There was an error sending data!", "error")
+          }
         })
       },
       resetFlash: function() {
@@ -592,10 +625,10 @@
           className: ""
         }
       },
-      setFlashMessage: function(msg, duration) {
+      setFlashMessage: function(msg, className, duration) {
         this.flashMessage = {
           active: true,
-          className: "success",
+          className,
           msg
         }
         setTimeout(this.resetFlash, duration || 3000)
@@ -608,7 +641,55 @@
       },
       receiveMeasurement: function(measurement) {
         console.log("received measurement", measurement)
-        this.locations[measurement.id].measurements.push(measurement.celcius)
+        this.measurements.push(measurement)
+      },
+      fetchAndSetData: function() {
+        return fetch('/data').then(res => res.json())
+        .then((data) => {
+          this.locations = data.locations
+          this.measurements = data.measurements
+          this.fetching = false
+          return new Promise((r) => r())
+        })
+        .catch((err) => {
+          this.disconnected = true
+          this.flashMessage = {
+            active: true,
+            className: 'error',
+            msg: 'No connection to database. Try again later.'
+          }
+          this.fetching = false
+        })
+      },
+      initSocket: function() {
+        this.socket = io()
+        // receive live data from the server
+        this.socket.on('update', this.receiveMeasurement)
+
+        const connectionError = (reason) => {
+          this.disconnected = true
+          this.flashMessage = {
+            active: true,
+            className: "error",
+            msg: "Connection error. Try to refresh or come back later."
+          }
+        }
+
+        // when socket has problems show a connection error
+        this.socket.on('disconnect', connectionError)
+        this.socket.on('connect_error', connectionError)
+        this.socket.on('connect_timeout', connectionError)
+
+        // when socket reconnects fetch new data and then
+        // remove any lingering flash messages
+        this.socket.on('reconnect', function() {
+          this.fetchAndSetData()
+          .then(() => {
+            // after we fetched updated data remove disconnection
+            this.disconnected = false
+            this.resetFlash()
+          })
+        }.bind(this))
       }
     }
   })
