@@ -2,10 +2,11 @@
   "name": "webpack",
   "description": "A Vue.js project",
   "version": "1.0.0",
-  "author": "jonniek <kayhty@windowslive.com>",
+  "author": "jonniek",
   "license": "MIT",
   "private": true,
   "main": "server.js",
+  "heroku-postbuild": "webpack -p",
   "scripts": {
     "dev": "cross-env NODE_ENV=development webpack-dev-server --hot",
     "build": "cross-env NODE_ENV=production webpack --progress --hide-modules"
