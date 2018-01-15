@@ -3,7 +3,7 @@ const express = require('express')
 const app = express()
 
 // add static folder to load icons and js
-app.use(express.static('static'))
+app.use(express.static('dist'))
 
 const http = require('http').Server(app)
 
