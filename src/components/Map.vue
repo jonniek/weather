@@ -1,26 +1,13 @@
-/** A canvas map vue component
-  *
-  * locations prop is an array of location objects with
-  * coordinates and latest temperature
-  *
-  * Selected prop is the index which location is selected
-  *
-  * Ping prop changes to index of a location that had a measurement
-  *
-  * Global variable dependencies:
-  *   Vue       /-- For the component declaration
-  *   d3        /-- For sphere projections/paths and other functions
-  *   world     /-- A json object with world-110m data
-  *   topojson  /-- For parsing the world data
-  *   
-  * Uses modern javascript features. Use babel transpilation
-  * to support older browsers.
-  *
-*/
+<template>
+	<canvas ref="canvas"></canvas>
+</template>
 
-// register vue component
-Vue.component('vue-map', {
-  template: '<canvas ref="canvas"></canvas>',
+<script>
+import * as world from '../assets/world-110m.json'
+import * as d3 from '../assets/js/d3.v3.min.js'
+import * as topojson from '../assets/js/topojson.v1.min.js'
+
+export default {
   props: ['locations', 'selected'],
   watch: {
     selected: function() {
@@ -34,7 +21,6 @@ Vue.component('vue-map', {
     }
   },
   created: function() {
-
     // initialize the first coordinates
     const firstloc = this.locations[this.selected]
     if (firstloc) {
@@ -282,4 +268,5 @@ Vue.component('vue-map', {
 
     }
   }
-})
+}
+</script>

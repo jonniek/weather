@@ -1,4 +1,6 @@
-A simple one page mobile(portrait) first weather app.
+A simple one page mobile(portrait) first weather app. [Demo](https://weather-a52d4.herokuapp.com/).
+
+![](preview.png)
 
 ### Tech stack
 
