@@ -26,8 +26,14 @@
 
       </div>
       <div class="buttons">
-        <div class="modalButton todetails" v-on:click="$store.commit('setModal', 'details')">Details</div>
-        <div class="modalButton toform" v-on:click="$store.commit('setModal', 'form')">Submit</div>
+        <div
+          class="modalButton todetails"
+          v-on:click="$store.commit('setModal', 'details')"
+        >Details</div>
+        <div
+          class="modalButton toform"
+          v-on:click="$store.commit('setModal', 'form')"
+        >Submit</div>
       </div>
     </div>
   </transition>
@@ -37,11 +43,13 @@
 import { mapGetters, mapState } from 'vuex'
 import Temperature from './Temperature.vue'
 export default {
-	name: 'InfoContainer',
+  name: 'InfoContainer',
   components: { Temperature },
-	computed: {
-		...mapState(['locations', 'animating']),
-		...mapGetters(['currentFormat', 'currentTemperature', 'currentLocation', 'inputTemperatureCelcius', 'currentHILO']),
+  computed: {
+    ...mapState(['locations', 'animating']),
+    ...mapGetters(['currentFormat', 'currentTemperature',
+    'currentLocation', 'inputTemperatureCelcius', 'currentHILO']),
+
     currentTime: function() {
       // get the time of the location we have selected
       const time = this.unixtime || 0
@@ -55,8 +63,7 @@ export default {
         seconds: locationtime.getUTCSeconds()
       }
     }
-
-	},
+  },
   data () {
     return {
       unixtime: 0,
@@ -74,8 +81,8 @@ export default {
       return t
     },
     notNaN: function(n) {
-    	if (isNaN(n)) return '-'
-    	return n
+      if (isNaN(n)) return '-'
+      return n
     }
   }
 }

@@ -2,13 +2,19 @@
   <transition name="slidedown" appear>
     <div class="topmenu" >
       <div class="cities">
-        <div :class="{ citybutton: true, selected: loc.id == preSelected }" v-on:click="clickHandler(loc.id)" v-for="loc in locations">
+        <div
+          :class="{ citybutton: true, selected: loc.id == preSelected }" v-on:click="clickHandler(loc.id)"
+          v-for="loc in locations"
+        >
           <img class="cityicon" :src="loc.imgUrl" alt="">
           <div class="cityname">{{ loc.name }}</div>
         </div>
       </div>
       <transition name="slidedown">
-        <div v-if="flashMessage.active" :class="flashMessage.className + ' flash'">{{ flashMessage.msg }}</div>
+        <div
+          v-if="flashMessage.active"
+          :class="flashMessage.className + ' flash'"
+        >{{ flashMessage.msg }}</div>
       </transition>
     </div>
   </transition>
@@ -17,15 +23,16 @@
 <script>
 import { mapGetters, mapState } from 'vuex'
 export default {
-	name: 'TopMenu',
-	computed: {
-		...mapState(['useCelcius', 'flashMessage', 'locations', 'preSelected'])
-	},
-	methods: {
-		clickHandler: function(id) {
-			this.$store.commit('setPreSelected', id)
-		}
-	}
+  name: 'TopMenu',
+  computed: {
+    ...mapState(['useCelcius', 'flashMessage',
+    'locations', 'preSelected'])
+  },
+  methods: {
+    clickHandler: function(id) {
+      this.$store.commit('setPreSelected', id)
+    }
+  }
 }
 </script>
 
@@ -47,12 +54,14 @@ export default {
   padding: 10px;
   min-width: 50px;
   transition: top 0.2s cubic-bezier(.25,.8,.25,1);
-  box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12),
+    0 1px 2px rgba(0,0,0,0.24);
   border: 2px solid #bcc;
   top: 0px;
 }
 .citybutton:hover, .citybutton.selected {
-  box-shadow: 0 8px 15px rgba(0,0,0,0.2), 0 5px 5px rgba(0,0,0,0.2);
+  box-shadow: 0 8px 15px rgba(0,0,0,0.2),
+    0 5px 5px rgba(0,0,0,0.2);
 }
 .citybutton.selected{
   cursor: default;
@@ -81,7 +90,8 @@ export default {
   color: white;
   font-weight: bold;
   padding: 10px 20px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12),
+    0 1px 2px rgba(0,0,0,0.24);
 }
 .flash.success {
   background: rgb(120, 200, 100);

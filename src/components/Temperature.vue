@@ -1,29 +1,33 @@
 <template>
   <span class="temperature" v-on:click="clickHandler">
-    <span v-if="useCelcius">{{ temperature | notNaN }}°C<span class="switch">°F</span></span>
-    <span v-else>{{ temperature | notNaN }}°F<span class="switch">°C</span></span>
+    <spanv-if="useCelcius">
+      {{ temperature | notNaN }}°C<span class="switch">°F</span>
+    </span>
+    <span v-else>
+      {{ temperature | notNaN }}°F<span class="switch">°C</span>
+    </span>
   </span>
 </template>
 
 <script>
 import { mapGetters, mapState } from 'vuex'
 export default {
-	name: 'TemperatureSwitch',
-	props: ['temperature'],
-	computed: {
-		...mapState(['useCelcius'])
-	},
-	methods: {
-		clickHandler: function() {
-			this.$store.commit('toggleCelcius')
-		}
-	},
-	filters: {
-    notNaN: function(n) {
-    	if (isNaN(n)) return '-'
-    	return n
+  name: 'TemperatureSwitch',
+  props: ['temperature'],
+  computed: {
+    ...mapState(['useCelcius'])
+  },
+  methods: {
+    clickHandler: function() {
+      this.$store.commit('toggleCelcius')
     }
-	}
+  },
+  filters: {
+    notNaN: function(n) {
+      if (isNaN(n)) return '-'
+      return n
+    }
+  }
 }
 </script>
 

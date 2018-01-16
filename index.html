@@ -5,26 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <title>weather</title>
     <style>
-	  .loader{
-	    position: absolute;
-	    top: 50%;
-	    left: 50%;
-	    transform: translate(-50%, -50%);
-	    z-index: -9999;
-	  }
+    .loader{
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: -9999;
+    }
 
-	  /* spinner from http://tobiasahlin.com/spinkit/ */
-	  .spinner{width:40px;height:40px;background-color:#233;
-	    border-radius:100%;-webkit-animation:sk-scaleout 1.0s infinite
-	    ease-in-out;animation:sk-scaleout 1.0s infinite ease-in-out;}
-	    @-webkit-keyframes sk-scaleout {0% {-webkit-transform:scale(0)}
-	    100%{-webkit-transform:scale(1.0);opacity:0;}}@keyframes sk-scaleout
-	    {0%{-webkit-transform:scale(0);transform:scale(0);}100%{
-	    -webkit-transform:scale(1.0);transform:scale(1.0);opacity:0;}}
-	  </style>
+    /* spinner from http://tobiasahlin.com/spinkit/ */
+    .spinner{width:40px;height:40px;background-color:#233;
+      border-radius:100%;-webkit-animation:sk-scaleout 1.0s infinite
+      ease-in-out;animation:sk-scaleout 1.0s infinite ease-in-out;}
+      @-webkit-keyframes sk-scaleout {0% {-webkit-transform:scale(0)}
+      100%{-webkit-transform:scale(1.0);opacity:0;}}@keyframes sk-scaleout
+      {0%{-webkit-transform:scale(0);transform:scale(0);}100%{
+      -webkit-transform:scale(1.0);transform:scale(1.0);opacity:0;}}
+    </style>
   </head>
   <body>
-  	<div class="loader"><div class="spinner"></div></div>
+    <div class="loader"><div class="spinner"></div></div>
     <div id="app"></div>
     <script src="/build.js"></script>
   </body>

@@ -1,18 +1,22 @@
 <template>
-	<div class="modal">
-      <h3 class="center">{{ currentLocation.name }} measurements</h3>
-      <transition-group
-        v-if="currentMeasurements.length > 0"
-        tag="ul"
-        name="fade-in-list"
-        class="measurementsList"
+  <div class="modal">
+    <h3 class="center">{{ currentLocation.name }} measurements</h3>
+    <transition-group
+      v-if="currentMeasurements.length > 0"
+      tag="ul"
+      name="fade-in-list"
+      class="measurementsList"
+    >
+      <li
+        class="listItem"
+        :key="measurement._id"
+        v-for="measurement in currentMeasurements"
       >
-        <li class="listItem" :key="measurement._id" v-for="measurement in currentMeasurements">
-          <span>
-            <span>{{ measurement.temperature }}{{ currentFormat }}</span>
-            <span class="light small align">{{ measurement.timestamp | xTimeAgo }}</span>
-          </span>
-        </li>
+        <span>
+          <span>{{ measurement.temperature }}{{ currentFormat }}</span>
+          <span class="light small align">{{ measurement.timestamp | xTimeAgo }}</span>
+        </span>
+      </li>
     </transition-group>
     <div v-else class="warning center">No measurements!</div>
   </div>
@@ -21,13 +25,15 @@
 <script>
 import { mapGetters } from 'vuex'
 export default {
-	computed: {
-		...mapGetters(['currentMeasurements', 'currentLocation', 'currentFormat']),
-	},
+  computed: {
+    ...mapGetters(['currentMeasurements', 'currentLocation',
+    'currentFormat']),
+  },
   filters: {
     xTimeAgo: function(unix) {
-    	// returns the minutes or hours since the timestamp
-      const minuteDifference = Math.round((Date.now() - unix) / 1000 / 60)
+      // returns the minutes or hours since the timestamp
+      const minuteDifference =
+        Math.round((Date.now() - unix) / 1000 / 60)
       if (minuteDifference > 59) {
         const hourDifference = Math.round(minuteDifference / 60)
         return hourDifference + ' hours ago'

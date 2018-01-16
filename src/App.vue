@@ -7,15 +7,28 @@
       <div class="overlay formodal" v-if="showModal"></div>
     </transition>
     <transition name="slidedown">
-      <div v-on:click.self="$store.commit('closeModal')" class="modalContainer" v-if="showModal" >
-        <ModalForm v-if="modalContent == 'form'"></ModalForm>
-        <ModalDetails v-else-if="modalContent == 'details'"></ModalDetails>
+      <div
+        v-on:click.self="$store.commit('closeModal')"
+        class="modalContainer"
+        v-if="showModal"
+      >
+        <ModalForm v-if="modalContent == 'form'">
+        </ModalForm>
+        <ModalDetails v-else-if="modalContent == 'details'">
+        </ModalDetails>
       </div>
     </transition>
 
     <InfoContainer></InfoContainer>
 
-    <Map id="map" v-on:started="$store.commit('startAnimating')" v-on:finished="$store.commit('finishAnimating')" :locations="locations" :selected="preSelected"></Map>
+    <Map
+      id="map"
+      v-on:started="$store.commit('startAnimating')"
+      v-on:finished="$store.commit('finishAnimating')"
+      :locations="locations"
+      :selected="preSelected"
+    ></Map>
+
   </div>
 </template>
 
@@ -40,7 +53,8 @@ export default {
     this.$store.dispatch('initLocation')
   },
   computed: {
-    ...mapState(['locations', 'preSelected', 'modalContent', 'showModal', 'appLoaded']),
+    ...mapState(['locations', 'preSelected',
+    'modalContent', 'showModal', 'appLoaded']),
   },
 }
 </script>
@@ -51,7 +65,9 @@ export default {
   -webkit-tap-highlight-color: rgba(255, 255, 255, 0);
 }
 html, body {
-  font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen-Sans,Ubuntu,Cantarell,"Helvetica Neue",sans-serif;
+  font-family: -apple-system,BlinkMacSystemFont,
+    "Segoe UI",Roboto,Oxygen-Sans,Ubuntu,
+    Cantarell,"Helvetica Neue",sans-serif;
   font-size: 17px;
   word-spacing: 1px;
   color:#455;

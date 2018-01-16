@@ -1,5 +1,5 @@
 <template>
-	<canvas ref="canvas"></canvas>
+  <canvas ref="canvas"></canvas>
 </template>
 
 <script>
@@ -78,7 +78,8 @@ export default {
     // redraw canvas when tab gets back into focus
     const visProp = getHiddenProp()
     if (visProp) {
-      const evtname = visProp.replace(/[H|h]idden/,'') + 'visibilitychange'
+      const evtname =
+        visProp.replace(/[H|h]idden/,'') + 'visibilitychange'
       window.addEventListener(evtname, this.draw)
     }
   },
