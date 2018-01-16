@@ -4,8 +4,8 @@
 
 <script>
 import * as world from '../assets/world-110m.json'
-import * as d3 from '../assets/js/d3.v3.min.js'
-import * as topojson from '../assets/js/topojson.v1.min.js'
+import { geo, transition, interpolate } from 'd3'
+import { feature, mesh } from 'topojson'
 
 export default {
   props: ['locations', 'selected'],
@@ -31,11 +31,11 @@ export default {
 
     // initialize worldmap meshes
     this.land =
-      topojson.feature(world, world.objects.land)
+      feature(world, world.objects.land)
     this.countries =
-      topojson.feature(world, world.objects.countries).features
+      feature(world, world.objects.countries).features
     this.borders =
-      topojson.mesh(world, world.objects.countries, (a, b) => a !== b)
+      mesh(world, world.objects.countries, (a, b) => a !== b)
 
     const locationIndexes =
       this.locations.map(l => l.topoindex)
@@ -119,20 +119,20 @@ export default {
 
       // controls the projection of the globe
       this.projection =
-        d3.geo.orthographic()
+        geo.orthographic()
         .scale(this.scale)
         .translate([this.width / 2, this.height / 2])
         .precision(0.6)
 
       // translates paths of the projection to the canvas
       this.path = 
-        d3.geo.path()
+        geo.path()
         .projection(this.projection)
         .context(this.context)
 
       // grids for the projection
-      this.backGrid = d3.geo.graticule()
-      this.frontGrid = d3.geo.graticule()
+      this.backGrid = geo.graticule()
+      this.frontGrid = geo.graticule()
 
       // rotate projection to the inital coordinates
       this.rotate(this.coordinates)
@@ -142,12 +142,12 @@ export default {
       // animation has started
       this.$emit('started')
 
-      d3.transition()
+      transition()
       .duration(1300)
       .tween('rotate', function() {
         // interpolate the path of the rotation
         const rotation =
-          d3.interpolate(
+          interpolate(
             this.projection.rotate(),
             coordinates.map(coordinate => -coordinate)
           )
@@ -243,7 +243,7 @@ export default {
 
       // create a red circle on each location
       const circle =
-        d3.geo.circle()
+        geo.circle()
 
       let circles = []
       for (let i in this.locations) {

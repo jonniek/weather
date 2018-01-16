@@ -64,6 +64,8 @@ export default {
 .cityicon {
   width: 50px;
   height: 50px;
+  max-width: 50px;
+  max-height: 50px;
   display: block;
   margin: auto;
   padding: 5px;
@@ -93,14 +95,13 @@ export default {
   }
   .citybutton {
     width: 20%;
+    padding: 7px;
   }
   .cityname { display: none; }
   .cityicon {
     width: 100%;
+    height: auto;
     padding: 0;
-  }
-  .infocontainer {
-    width: calc(100% - 20px);
   }
 }
 </style>

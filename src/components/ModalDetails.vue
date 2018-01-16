@@ -26,6 +26,7 @@ export default {
 	},
   filters: {
     xTimeAgo: function(unix) {
+    	// returns the minutes or hours since the timestamp
       const minuteDifference = Math.round((Date.now() - unix) / 1000 / 60)
       if (minuteDifference > 59) {
         const hourDifference = Math.round(minuteDifference / 60)

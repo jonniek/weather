@@ -34,7 +34,7 @@ export default {
 		}
 	},
 	computed: {
-		...mapState(['disconnected', 'inputTemperature', 'socket', 'userlocation', 'locations', 'selected']),
+		...mapState(['disconnected', 'inputTemperature', 'userlocation', 'locations', 'selected']),
 		...mapGetters(['minmaxTemperature', 'currentLocation', 'inputTemperatureCelcius']),
 		submitDisabled: function() {
 			return this.disconnected || this.sending

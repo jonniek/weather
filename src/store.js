@@ -8,6 +8,7 @@ const store = new Vuex.Store({
   state: {
   	appLoaded: false,
   	socket: undefined,
+    disconnected: false,
   	animating: false,
   	showModal: false,
   	modalContent: 'form',
@@ -21,11 +22,8 @@ const store = new Vuex.Store({
   		msg: ""
   	},
   	inputTemperature: 0,
-  	// location data
-  	location: [],
-  	// temperature measurements data
-  	measurements: [],
-    disconnected: false,
+  	locations: [],
+  	measurements: []
   },
   getters: {
   	currentMeasurements: state => {

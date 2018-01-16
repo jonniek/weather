@@ -89,8 +89,9 @@ export default {
   align-self: center;
   margin-top: auto;
   margin-bottom: 10px;
-  padding: 7px 10px;
-  min-width: 300px;
+  padding: 7px 20px;
+  width: calc(100% - 20px);
+  max-width: 400px;
 }
 .infocontainer .dataContainer {
   display: flex;
@@ -176,5 +177,12 @@ export default {
     -2px -2px #bcc, /* top left */
     1px -2px #bcc, /* top right */
     -2px 1px #bcc /* bottom left */
+}
+
+
+@media(max-width: 800px) {
+  .infocontainer {
+    max-width: auto;
+  }
 }
 </style>

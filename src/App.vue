@@ -21,10 +21,10 @@
 
 <script>
 import { mapGetters, mapState } from 'vuex'
-import ModalForm from './components/ModalForm.vue'
 import TopMenu from './components/TopMenu.vue'
 import InfoContainer from './components/InfoContainer.vue'
 import ModalDetails from './components/ModalDetails.vue'
+import ModalForm from './components/ModalForm.vue'
 import Map from './components/Map.vue'
 
 export default {
