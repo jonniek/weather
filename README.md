@@ -1,4 +1,5 @@
-![](preview.png)
+![](preview.png)  
+
 A simple one page mobile(portrait) first weather app.  
 Try the [Demo](https://weather-a52d4.herokuapp.com/)!
 
@@ -16,14 +17,14 @@ To receive data real time I needed to use websockets so I chose to try out socke
 #### nedb
 A lovely tiny local database with the familiar mongodb api. Good for a quick prototype and easy to upgrade to the well scaling mongodb.
 
-## UI & UX design choices
+### UI & UX design choices
 It was important that the ui is simple and not too crowded for mobiles. I wanted there to be three main actions; changing city, reading data and submitting data. Reading data is the most important but you don't want to be distracted by too many things so I chose to extend the details of measurements to a modal.  
 
 Changing cities was an also important thing. People are used to menus being in the top of their application so I wanted the 'switch' to be there. Since there is only 5 locations I chose to show them all in a row with some icons to catch the eye. However if this were to scale larger we would need to think some other solution for this. Perhaps to be able to scroll the map and click on locations together with a search box.  
 
 Submitting data is the third action and it was a natural choice to put in a modal because not everyone wants to submit data. At first I had the form be a select and a number input, this was problematic for one reason especially. The number input on a mobile opens the keyboard that makes the space on screen very small. This could be worked around but I think it would take some time to get it right. I found using a range input was a more elegant solution. I dropped the select input for city completely and decided to have it be based on the location in the current view. This way the form became very simple and clean making it quick and easy to use.   
 
-## Todo / excercise for the reader
+### Todo / excercise for the reader
 Some things were purposefully not implemented to save time. Possible future improvements to the code could include the following:
 -  Routing: have the url change by selected location and(or) state
 -  Responsive css: add better views for desktop and small landscape devices
@@ -32,7 +33,7 @@ Some things were purposefully not implemented to save time. Possible future impr
 -  Testing: I skipped testing completely to progress faster
 -  ui: add some colors
 
-## Build Setup
+### Build Setup
 
 ``` bash
 # install dependencies
