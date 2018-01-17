@@ -1,6 +1,6 @@
 <template>
   <span class="temperature" v-on:click="clickHandler">
-    <spanv-if="useCelcius">
+    <span v-if="useCelcius">
       {{ temperature | notNaN }}°C<span class="switch">°F</span>
     </span>
     <span v-else>
