@@ -2,20 +2,11 @@
 
 A simple one page mobile(portrait) first weather app.  
 Try the [Demo](https://weather-a52d4.herokuapp.com/)!
-
-### Tech stack
-
-#### Vue
-Animations in vue is a joy.
+  
+If you are wondering why the app is a bit weird it is because this was a demo project for Reaktor summer internship 2018 interview.
 
 #### d3 & topojson
 I wanted to have a map to visualize the world but I found google maps integration is very slow and unreliable especially on pans and zooms. It took me a while to find a replacement but d3-geo combined with topojson and earth svg data looked really impressive and didn't have the baggage of google maps.  
-
-#### socket.io
-To receive data in realtime
-
-#### nedb
-A lovely tiny local database with the mongodb api. Good for a quick prototype and easy to upgrade to the well scaling mongodb.
 
 ### UI & UX design choices
 It was important that the ui is simple and not too crowded for mobiles. I wanted there to be three main actions; changing city, reading data and submitting data.
