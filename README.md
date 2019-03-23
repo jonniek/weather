@@ -1,6 +1,6 @@
 ![](preview.png)  
 
-A simple one page mobile(portrait) first weather app done as a pre-interview project for Reaktor summer job 2018.  
+A simple one page mobile(portrait) first weather app.  
 Try the [Demo](https://weather-a52d4.herokuapp.com/)! It might take some time to fire up, be patient!
   
 If you are wondering why the app is a bit weird it is because this was a demo project for Reaktor summer internship 2018 interview.
