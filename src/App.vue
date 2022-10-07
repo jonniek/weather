@@ -19,7 +19,7 @@
       </div>
     </transition>
 
-    <InfoContainer></InfoContainer>
+    <InfoContainer v-if="!hidebottom"></InfoContainer>
 
     <Map
       id="map"
@@ -54,7 +54,7 @@ export default {
   },
   computed: {
     ...mapState(['locations', 'preSelected',
-    'modalContent', 'showModal', 'appLoaded']),
+    'modalContent', 'showModal', 'appLoaded', 'hidebottom']),
   },
 }
 </script>

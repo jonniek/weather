@@ -7,6 +7,7 @@ import io from 'socket.io-client'
 const store = new Vuex.Store({
   state: {
   	appLoaded: false,
+		hidebottom: Boolean(new URLSearchParams(window.location.search).get("hidebottom")),
   	socket: undefined,
     disconnected: false,
   	animating: false,
